@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Scanner</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            margin: 3rem auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: #f8f9fa;
+        }
+
+        button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .loading {
+            display: none;
+            font-weight: bold;
+            color: #333;
+            margin-top: 10px;
+        }
+
+    
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 8px 16px; /* Reduced size */
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9rem; /* Adjusted font size */
+            margin-top: 10px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #2c3e50;
+            color: #ecf0f1;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .button-container {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Vulnerability Scanner</h1>
+    </header>
+    <main>
+        <div class="form-container">
+            <h2>Scan Your Target</h2>
+            <form id="scanForm">
+                <label for="target">Target IP/Domain:</label>
+                <input type="text" id="target" name="target" placeholder="Enter target (e.g., scanme.nmap.org)" required>
+                <label for="scan_type">Scan Type:</label>
+                <select id="scan_type" name="scan_type">
+                    <option value="Quick">Quick Scan</option>
+                    <option value="Full">Full Scan</option>
+                    <option value="Vulnerability">Vulnerability Scan</option>
+                </select>
+                <button type="button" onclick="submitScan()">Start Scan</button>
+            </form>
+            <div id="loading" class="loading">Scanning... Please wait.</div>
+            <div id="error" class="error"></div>
+            <div class="button-container">
+                <a id="viewReportLink" href="#" target="_blank" class="btn" style="display: none;">View Report</a>
+                <a id="downloadReportLink" href="#" target="_blank" class="btn" style="display: none;">Download Report</a>
+            </div>
+        </div>
+    </main>
+    <footer>
+        &copy; 2025 VulnScan Automator Scanner Tool. All rights reserved.
+    </footer>
+    <script>
+        async function submitScan() {
+            const target = document.getElementById('target').value;
+            const scanType = document.getElementById('scan_type').value;
+            const loading = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const viewReportLink = document.getElementById('viewReportLink');
+            const downloadReportLink = document.getElementById('downloadReportLink');
+            
+            // Reset messages and visibility
+            errorDiv.textContent = ''; 
+            viewReportLink.style.display = 'none'; 
+            downloadReportLink.style.display = 'none';
+
+            // Show the loading message
+            loading.style.display = 'block';  
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, scan_type: scanType })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    errorDiv.textContent = `Error: ${data.error}`;
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                // Generate the report link for the user
+                const reportUrl = '/report/' + target + '?scan_type=' + scanType;
+                const pdfDownloadUrl = `/generate_pdf/${target}/${scanType}`;
+                
+                viewReportLink.href = reportUrl;
+                downloadReportLink.href = pdfDownloadUrl;
+
+                viewReportLink.style.display = 'inline-block';
+                downloadReportLink.style.display = 'inline-block';
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                // Hide the loading message
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

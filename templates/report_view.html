@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report</title>
+    <style>
+        /* Enhanced CSS Design */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .report-container {
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 1200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f1f8ff;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Style for merged host cells */
+        td[rowspan] {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            vertical-align: top;
+            border-right: 2px solid #e0e0e0;
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #3498db;
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 1rem;
+            background: #fdeded;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #2c3e50;
+            color: #ecf0f1;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+
+        /* Vulnerabilities list styling */
+        ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 0.9em;
+            color: #34495e;
+        }
+
+        /* Status indicators */
+        td:nth-child(6) {
+            font-weight: 500;
+        }
+
+        td:nth-child(6):contains("open") {
+            color: #27ae60;
+        }
+
+        td:nth-child(6):contains("closed") {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .report-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Vulnerability Report</h1>
+    </header>
+    <div class="report-container">
+        <p><strong>Report generated on:</strong> {{ date }}</p>
+        <h2>Target: {{ target }}</h2>
+        <h3>Scan Type: {{ scan_type }}</h3>
+        <hr>
+        
+        {% if error %}
+            <div class="error">
+                <p>{{ error }}</p>
+            </div>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>State</th>
+                        <th>Protocol</th>
+                        <th>Port</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                        {% if scan_type == 'Vulnerability' %}
+                            <th>Vulnerabilities</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for host, details in scan_results.items() %}
+                        {% set port_count = 0 %}
+                        {% for protocol, ports in details.protocols.items() %}
+                            {% set port_count = port_count + ports|length %}
+                        {% endfor %}
+                        {% set ns = namespace(first=true) %}
+                        {% for protocol, ports in details.protocols.items() %}
+                            {% for port_info in ports %}
+                                <tr>
+                                    {% if ns.first %}
+                                        <td rowspan="{{ port_count }}">{{ host }}</td>
+                                        {% set ns.first = false %}
+                                    {% endif %}
+                                    <td>{{ details.state }}</td>
+                                    <td>{{ protocol }}</td>
+                                    <td>{{ port_info.port }}</td>
+                                    <td>{{ port_info.service }}</td>
+                                    <td>{{ port_info.status }}</td>
+                                    {% if scan_type == 'Vulnerability' %}
+                                        <td>
+                                            {% if details.vulnerabilities %}
+                                                <ul>
+                                                    {% for Vulnerability in details.vulnerabilities %}
+                                                        <li>{{ Vulnerability }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% else %}
+                                                <p>No vulnerabilities found</p>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        
+        <br>
+        <a href="{{ pdf_download_url }}" class="btn">Download PDF</a>
+        <a href="/" class="btn">Back to Home</a>
+    </div>
+
+    <footer>
+        &copy;  2025 VulnScan Automator Scanner Tool. All rights reserved.
+    </footer>
+</body>
+</html>
